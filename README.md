@@ -1,36 +1,23 @@
 # tg-bot-starter
 
-Минимальный стартовый Telegram-бот на **Python + aiogram 3**.
+простая база под телеграм-бота. aiogram 3, без лишнего.
 
-Подходит как база для заказов: команды, эхо, локальное хранение пользователей, готов к расширению (админка, уведомления, интеграции).
-
-## Возможности
-
-- `/start`, `/help`, `/ping`, `/stats`
-- Эхо на любой текст
-- Сохранение пользователей в `data/users.json`
-
-## Быстрый старт
+## запуск
 
 ```bash
 python -m venv .venv
-.venv\Scripts\activate        # Windows
+.venv\Scripts\activate
 pip install -r requirements.txt
-copy .env.example .env        # вставь токен от @BotFather
+copy .env.example .env
 python bot.py
 ```
 
-## Переменные окружения
+токен берёшь у @BotFather, кладёшь в `.env` как `BOT_TOKEN=...`
 
-| Переменная | Описание |
-|------------|----------|
-| `BOT_TOKEN` | Токен бота от [@BotFather](https://t.me/BotFather) |
+## что внутри
 
-## Стек
+- /start /help /ping /stats
+- эхо на текст
+- юзеры пишутся в data/users.json
 
-- Python 3.12+
-- [aiogram 3](https://docs.aiogram.dev/)
-
-## Лицензия
-
-MIT — свободно использовать в коммерческих проектах.
+норм как старт под заказ — дальше докручиваешь под тз

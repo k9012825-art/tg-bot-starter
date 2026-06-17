@@ -1,8 +1,6 @@
-"""Minimal Telegram bot starter — commands, echo, simple user storage."""
-
+# простой тг-бот, стартовая база под заказы
 import asyncio
 import json
-import logging
 import os
 from pathlib import Path
 
@@ -10,72 +8,72 @@ from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command, CommandStart
 from aiogram.types import Message
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+TOKEN = os.getenv("BOT_TOKEN")
+if not TOKEN:
+    raise SystemExit("нет BOT_TOKEN — скопируй .env.example в .env")
 
-DATA_FILE = Path(__file__).parent / "data" / "users.json"
+USERS_FILE = Path(__file__).parent / "data" / "users.json"
+bot = Bot(TOKEN)
+dp = Dispatcher()
 
 
-def load_users() -> dict:
-    if not DATA_FILE.exists():
+def load_users():
+    if not USERS_FILE.exists():
         return {}
-    return json.loads(DATA_FILE.read_text(encoding="utf-8"))
+    return json.loads(USERS_FILE.read_text(encoding="utf-8"))
 
 
-def save_users(users: dict) -> None:
-    DATA_FILE.parent.mkdir(parents=True, exist_ok=True)
-    DATA_FILE.write_text(json.dumps(users, ensure_ascii=False, indent=2), encoding="utf-8")
+def save_users(data):
+    USERS_FILE.parent.mkdir(exist_ok=True)
+    USERS_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def remember_user(message: Message) -> None:
+def save_user(msg: Message):
     users = load_users()
-    uid = str(message.from_user.id)
+    uid = str(msg.from_user.id)
     users[uid] = {
-        "username": message.from_user.username,
-        "first_name": message.from_user.first_name,
-        "last_seen": message.date.isoformat(),
+        "name": msg.from_user.first_name,
+        "username": msg.from_user.username,
+        "last_seen": msg.date.isoformat(),
     }
     save_users(users)
 
 
-async def main() -> None:
-    token = os.environ.get("BOT_TOKEN")
-    if not token:
-        raise SystemExit("Set BOT_TOKEN env variable. See .env.example")
+@dp.message(CommandStart())
+async def start(msg: Message):
+    save_user(msg)
+    await msg.answer(
+        "привет\n\n"
+        "/help — что умею\n"
+        "/ping — жив ли бот\n"
+        "/stats — сколько юзеров в базе"
+    )
 
-    bot = Bot(token=token)
-    dp = Dispatcher()
 
-    @dp.message(CommandStart())
-    async def cmd_start(message: Message) -> None:
-        remember_user(message)
-        await message.answer(
-            "Привет! Я демо-бот для портфолио.\n\n"
-            "Команды:\n"
-            "/help — список команд\n"
-            "/ping — проверка связи\n"
-            "/stats — сколько пользователей в базе"
-        )
+@dp.message(Command("help"))
+async def help_cmd(msg: Message):
+    await msg.answer("команды: /start /help /ping /stats\nлюбой текст — отвечу эхом")
 
-    @dp.message(Command("help"))
-    async def cmd_help(message: Message) -> None:
-        await message.answer("Команды: /start, /help, /ping, /stats\nЛюбой текст — эхо-ответ.")
 
-    @dp.message(Command("ping"))
-    async def cmd_ping(message: Message) -> None:
-        await message.answer("pong")
+@dp.message(Command("ping"))
+async def ping(msg: Message):
+    await msg.answer("pong")
 
-    @dp.message(Command("stats"))
-    async def cmd_stats(message: Message) -> None:
-        count = len(load_users())
-        await message.answer(f"Пользователей в локальной базе: {count}")
 
-    @dp.message(F.text)
-    async def echo(message: Message) -> None:
-        remember_user(message)
-        await message.answer(f"Эхо: {message.text}")
+@dp.message(Command("stats"))
+async def stats(msg: Message):
+    n = len(load_users())
+    await msg.answer(f"юзеров в базе: {n}")
 
-    logger.info("Bot started")
+
+@dp.message(F.text)
+async def echo(msg: Message):
+    save_user(msg)
+    await msg.answer(f"ты написал: {msg.text}")
+
+
+async def main():
+    print("бот запущен")
     await dp.start_polling(bot)
 
 
